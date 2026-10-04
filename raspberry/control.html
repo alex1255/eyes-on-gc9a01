@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Uncanny Eyes · Raspberry</title>
+<style>
+  :root{color-scheme:dark;font:16px system-ui,sans-serif;background:#090b0d;color:#eff3f5}
+  *{box-sizing:border-box}body{margin:0;padding:24px}main{max-width:600px;margin:auto}
+  h1{font-size:24px;margin:0 0 24px;letter-spacing:0}.view{display:grid;place-items:center;padding:18px 0 32px}
+  img{width:min(100%,400px);height:auto;aspect-ratio:1;border-radius:50%;background:black;border:1px solid #333}
+  .controls{display:grid;gap:22px;border-top:1px solid #34383c;padding-top:24px}
+  label{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  select,button{font:inherit;color:inherit;background:#1b2025;border:1px solid #58636c;border-radius:6px;padding:10px 14px}
+  select{max-width:65%}input[type=range]{width:60%;accent-color:#d7b937}input[type=checkbox]{width:20px;height:20px;accent-color:#36bfbc}
+  button{cursor:pointer}button:active{background:#343c44}footer{margin-top:24px;color:#9eabb4;font-size:13px}
+  #status{float:right}button:disabled{opacity:.5}
+</style>
+<main>
+  <h1>Uncanny Eyes</h1>
+  <div class="view"><img id="preview" src="/preview.png" alt="Aktuelles Displaybild" width="240" height="240"></div>
+  <div class="controls">
+    <label>Ansicht <select id="mode"><option value="twin">Zwei Augen</option><option value="single">Ein Auge</option></select></label>
+    <label>Wanderblick <input id="wander" type="checkbox" checked></label>
+    <label>Pupille <input id="pupil" type="range" min="0.15" max="0.42" step="0.01" value="0.29"></label>
+    <button id="blink" type="button">Blinzeln</button>
+  </div>
+  <footer>Raspberry Pi · GC9A01 <span id="status">Verbinde...</span></footer>
+</main>
+<script>
+  const status = document.getElementById('status');
+  const controls = ['mode','wander','pupil'];
+  async function settings(values){
+    try{
+      const response = await fetch('/api',values ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values)} : {});
+      if(!response.ok) throw new Error(await response.text());
+      const state = await response.json();
+      document.getElementById('mode').value=state.mode;
+      document.getElementById('wander').checked=state.wander;
+      document.getElementById('pupil').value=state.pupil;
+      status.textContent=state.fps ? state.fps+' fps' : 'Verbunden';
+    }catch(error){status.textContent='Verbindung unterbrochen';}
+  }
+  for(const key of controls) document.getElementById(key).addEventListener('change',event=>settings({[key]:key==='wander' ? event.target.checked : key==='pupil' ? Number(event.target.value) : event.target.value}));
+  document.getElementById('blink').onclick=()=>settings({blink:true});
+  const preview=document.getElementById('preview');
+  function refresh(){if(!document.hidden)preview.src='/preview.png?t='+Date.now();else setTimeout(refresh,500);}
+  preview.onload=()=>setTimeout(refresh,250);
+  preview.onerror=()=>{status.textContent='Verbindung unterbrochen';setTimeout(refresh,1500);};
+  settings();
+  setInterval(()=>{if(!document.hidden && !controls.includes(document.activeElement.id))settings();},5000);
+</script>
+</html>

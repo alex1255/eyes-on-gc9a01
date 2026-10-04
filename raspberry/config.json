@@ -1,0 +1,13 @@
+{
+  "spi_bus": 0,
+  "spi_device": 0,
+  "spi_hz": 32000000,
+  "gpiochip": 0,
+  "dc": 25,
+  "reset": 27,
+  "port": 8080,
+  "fps": 25,
+  "mode": "twin",
+  "wander": true,
+  "pupil": 0.29
+}

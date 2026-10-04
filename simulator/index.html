@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GC9A01 Uncanny Eyes Simulator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07080a;
+      --panel: #111418;
+      --panel-2: #171c21;
+      --line: #2d343b;
+      --text: #eef3ef;
+      --muted: #9aa7a3;
+      --accent: #22d4b7;
+      --hot: #d35d45;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(45, 84, 77, 0.22), transparent 34rem),
+        linear-gradient(180deg, #090b0e, var(--bg));
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    main {
+      width: min(1160px, 100%);
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) 360px;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .stage {
+      min-height: min(760px, calc(100vh - 44px));
+      display: grid;
+      place-items: center;
+      position: relative;
+      padding: 0 0 74px 0;
+    }
+
+    .display-frame {
+      width: min(78vh, 92vw, 680px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 42%, #272522 0 50%, #0b0c0e 68%, #020203 100%);
+      box-shadow:
+        0 0 0 2px #1f2529,
+        0 0 0 16px #050607,
+        0 28px 80px rgba(0, 0, 0, 0.62),
+        inset 0 0 52px rgba(0, 0, 0, 0.9);
+      padding: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      cursor: crosshair;
+      touch-action: none;
+      image-rendering: auto;
+    }
+
+    .actual-size {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 272px;
+      padding: 10px;
+      border: 1px solid #313940;
+      border-radius: 8px;
+      background: rgba(9, 11, 13, 0.86);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(10px);
+    }
+
+    .actual-size canvas {
+      display: block;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 1px #1c2228,
+        0 8px 24px rgba(0, 0, 0, 0.48);
+      cursor: default;
+    }
+
+    .actual-size span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    aside {
+      align-self: stretch;
+      max-height: calc(100vh - 44px);
+      overflow: auto;
+      background: color-mix(in srgb, var(--panel) 92%, black 8%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 19px;
+      letter-spacing: 0;
+      font-weight: 720;
+    }
+
+    .sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .group {
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 13px;
+    }
+
+    .group:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    label {
+      display: grid;
+      grid-template-columns: 96px 1fr 46px;
+      gap: 10px;
+      align-items: center;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    output {
+      color: var(--muted);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+      background: #1b2227;
+    }
+
+    button.primary {
+      background: #10332f;
+      border-color: #1a8072;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 2px 0 0;
+    }
+
+    @media (max-width: 840px) {
+      body {
+        padding: 14px;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        min-height: auto;
+      }
+
+      .display-frame {
+        width: min(92vw, 560px);
+      }
+
+      .actual-size {
+        position: static;
+        width: 262px;
+        justify-self: center;
+        margin-top: 14px;
+      }
+
+      aside {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="stage" aria-label="Rundes GC9A01 Display">
+      <div class="display-frame">
+        <canvas id="display" width="240" height="240"></canvas>
+      </div>
+      <div class="actual-size" aria-label="Originalgroesse Vorschau">
+        <canvas id="display-actual" width="240" height="240"></canvas>
+        <span>Originalgroesse: 240x240 px</span>
+      </div>
+    </section>
+
+    <aside>
+      <h1>GC9A01 Eye Simulator</h1>
+      <p class="sub">240x240 rundes Display, zwei kleine Uncanny Eyes</p>
+
+      <div class="group">
+        <label>
+          <span>Blick X</span>
+          <input data-control="x" type="range" min="-1" max="1" step="0.01" value="0">
+          <output data-out="x">0.00</output>
+        </label>
+        <label>
+          <span>Blick Y</span>
+          <input data-control="y" type="range" min="-1" max="1" step="0.01" value="0">
+          <output data-out="y">0.00</output>
+        </label>
+        <label>
+          <span>Blinzeln</span>
+          <input data-control="blink" type="range" min="0" max="1" step="0.01" value="0.02">
+          <output data-out="blink">0.02</output>
+        </label>
+        <p class="hint">Klicke oder ziehe direkt im Display, um die Blickrichtung zu setzen.</p>
+      </div>
+
+      <div class="group">
+        <label>
+          <span>Iris</span>
+          <input data-control="iris" type="range" min="12" max="32" step="1" value="24">
+          <output data-out="iris">24</output>
+        </label>
+        <label>
+          <span>Pupille</span>
+          <input data-control="pupil" type="range" min="0" max="1" step="0.01" value="0.54">
+          <output data-out="pupil">0.54</output>
+        </label>
+        <label>
+          <span>Lider</span>
+          <input data-control="lids" type="range" min="0" max="1" step="0.01" value="0">
+          <output data-out="lids">0.00</output>
+        </label>
+        <label>
+          <span>Aussen hoch</span>
+          <input data-control="outer" type="range" min="-0.35" max="0.6" step="0.01" value="0.14">
+          <output data-out="outer">0.14</output>
+        </label>
+        <label>
+          <span>Textur</span>
+          <input data-control="mood" type="range" min="0" max="1" step="0.01" value="0.74">
+          <output data-out="mood">0.74</output>
+        </label>
+        <label>
+          <span>Tiefe</span>
+          <input data-control="depth" type="range" min="0" max="1" step="0.01" value="0.78">
+          <output data-out="depth">0.78</output>
+        </label>
+        <label>
+          <span>Groesse</span>
+          <input data-control="size" type="range" min="0.62" max="1.16" step="0.01" value="0.82">
+          <output data-out="size">0.82</output>
+        </label>
+        <label>
+          <span>Abstand</span>
+          <input data-control="spacing" type="range" min="68" max="106" step="1" value="96">
+          <output data-out="spacing">96</output>
+        </label>
+      </div>
+
+      <div class="group">
+        <div class="buttons">
+          <button class="primary" type="button" data-action="wander">Wanderblick</button>
+          <button type="button" data-action="blink">Blink</button>
+          <button type="button" data-action="twin">2 Augen</button>
+          <button type="button" data-action="single">1 Auge</button>
+          <button type="button" data-action="photo">Foto-Farben</button>
+          <button type="button" data-action="round">Rund offen</button>
+          <button type="button" data-action="soft">Weicher</button>
+          <button type="button" data-action="center">Mitte</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("display");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      const actualCanvas = document.getElementById("display-actual");
+      const actualCtx = actualCanvas.getContext("2d", { alpha: false });
+      const controls = {};
+      const outputs = {};
+      for (const input of document.querySelectorAll("[data-control]")) {
+        controls[input.dataset.control] = input;
+      }
+      for (const output of document.querySelectorAll("[data-out]")) {
+        outputs[output.dataset.out] = output;
+      }
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      let wander = true;
+      let blinkPulse = 0;
+      let starePulse = 0;
+      let microX = 0;
+      let microY = 0;
+      let nextTwitch = 0;
+      let lastTime = performance.now();
+      let layout = "twin";
+
+      function value(name) {
+        return Number(controls[name].value);
+      }
+
+      function setValue(name, newValue) {
+        controls[name].value = String(newValue);
+      }
+
+      function syncOutputs() {
+        for (const key of Object.keys(outputs)) {
+          const raw = value(key);
+          outputs[key].value = Number.isInteger(raw) ? String(raw) : raw.toFixed(2);
+        }
+      }
+
+      function eyePath(cx, cy, w, h, tilt, lids, outerLift) {
+        if (lids < 0.12) {
+          const round = 1 - lids / 0.12;
+          const radius = w * (0.5 + round * 0.04);
+          const vertical = radius * (1 - lids * 0.55);
+          const y = cy - outerLift * h * 0.14;
+          ctx.beginPath();
+          ctx.ellipse(cx, y, radius, vertical, 0, 0, Math.PI * 2);
+          ctx.closePath();
+          return;
+        }
+
+        const open = 1 - lids;
+        const leftLift = Math.max(0, -outerLift);
+        const rightLift = Math.max(0, outerLift);
+        const leftY = cy + tilt - leftLift * h * 0.44 + rightLift * h * 0.04;
+        const rightY = cy - tilt - rightLift * h * 0.44 + leftLift * h * 0.04;
+        const roundTop = 1.18 + open * 0.34;
+        const roundBottom = 1.12 + open * 0.3;
+        const almondTop = 0.62 + lids * 0.18;
+        const almondBottom = 0.54 - lids * 0.06;
+        const topH = almondTop * lids + roundTop * open;
+        const bottomH = almondBottom * lids + roundBottom * open;
+        const rightX = w * (0.53 + open * 0.1);
+        const leftX = w * (0.53 + open * 0.08);
+        ctx.beginPath();
+        ctx.moveTo(cx - leftX, leftY);
+        ctx.bezierCurveTo(
+          cx - w * (0.54 + open * 0.02),
+          cy - h * topH - leftLift * h * 0.34,
+          cx + w * (0.52 + open * 0.02),
+          cy - h * (topH * 0.96) - rightLift * h * 0.34,
+          cx + rightX,
+          rightY
+        );
+        ctx.bezierCurveTo(
+          cx + w * (0.54 + open * 0.02),
+          cy + h * bottomH - rightLift * h * 0.18,
+          cx - w * (0.52 + open * 0.02),
+          cy + h * bottomH - leftLift * h * 0.18,
+          cx - leftX,
+          leftY
+        );
+        ctx.closePath();
+      }
+
+      function drawSkinTexture(t, mood) {
+        const bg = ctx.createRadialGradient(120, 116, 14, 120, 120, 126);
+        bg.addColorStop(0, "#0f1215");
+        bg.addColorStop(0.42, "#07090b");
+        bg.addColorStop(0.72, "#020304");
+        bg.addColorStop(1, "#000000");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, 240, 240);
+
+        for (let i = 0; i < 26; i += 1) {
+          const a = i * Math.PI * 2 / 34 + Math.sin(t * 0.0002 + i) * 0.02;
+          const r1 = 38 + (i % 7) * 6;
+          const r2 = 112 - (i % 5) * 7;
+          ctx.strokeStyle = `rgba(64, 92, 96, ${0.025 + mood * 0.028})`;
+          ctx.lineWidth = 0.55;
+          ctx.beginPath();
+          ctx.moveTo(120 + Math.cos(a) * r1, 124 + Math.sin(a) * r1 * 0.58);
+          ctx.bezierCurveTo(
+            120 + Math.cos(a + 0.28) * 62,
+            124 + Math.sin(a + 0.28) * 38,
+            120 + Math.cos(a - 0.18) * 86,
+            124 + Math.sin(a - 0.18) * 54,
+            120 + Math.cos(a) * r2,
+            124 + Math.sin(a) * r2 * 0.66
+          );
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.32 + mood * 0.18})`;
+        ctx.beginPath();
+        ctx.ellipse(120, 128, 111, 77, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawRecess(cx, cy, w, h, tilt, lids, outerLift, depth, scale) {
+        if (depth <= 0.01) return;
+
+        ctx.save();
+        ctx.shadowColor = `rgba(0, 0, 0, ${0.36 + depth * 0.32})`;
+        ctx.shadowBlur = 14 * scale;
+        ctx.shadowOffsetY = 7 * depth * scale;
+        ctx.lineCap = "round";
+
+        for (let i = 4; i >= 0; i -= 1) {
+          const grow = (i * 4 + depth * 6) * scale;
+          ctx.lineWidth = (3.2 + i * 1.8) * scale;
+          ctx.strokeStyle = [
+            `rgba(0, 0, 0, ${0.34 + depth * 0.28})`,
+            `rgba(23, 18, 22, ${0.45 + depth * 0.2})`,
+            `rgba(42, 31, 27, ${0.36 + depth * 0.18})`,
+            `rgba(15, 13, 16, ${0.5 + depth * 0.16})`,
+            `rgba(0, 0, 0, ${0.5 + depth * 0.18})`
+          ][i];
+          eyePath(cx, cy + (i - 2) * depth * 0.7 * scale, w + grow, h + grow, tilt, lids, outerLift);
+          ctx.stroke();
+        }
+
+        ctx.shadowColor = "transparent";
+        ctx.lineWidth = 2.1 * scale;
+        ctx.strokeStyle = `rgba(44, 222, 255, ${0.3 + depth * 0.46})`;
+        eyePath(cx, cy - 2.3 * scale, w + 9 * scale, h + 8 * scale, tilt, lids, outerLift);
+        ctx.stroke();
+
+        ctx.lineWidth = 2.4 * scale;
+        ctx.strokeStyle = `rgba(117, 66, 255, ${0.42 + depth * 0.38})`;
+        eyePath(cx, cy + 2.2 * scale, w + 1 * scale, h + 1 * scale, tilt, lids, outerLift);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawInsetShadow(cx, cy, w, h, tilt, lids, outerLift, depth, scale) {
+        if (depth <= 0.01) return;
+
+        ctx.save();
+        eyePath(cx, cy, w, h, tilt, lids, outerLift);
+        ctx.clip();
+
+        const sideShadow = ctx.createLinearGradient(cx - w * 0.7, cy, cx + w * 0.7, cy);
+        sideShadow.addColorStop(0, `rgba(8, 7, 10, ${0.44 + depth * 0.34})`);
+        sideShadow.addColorStop(0.28, `rgba(57, 34, 29, ${0.18 + depth * 0.16})`);
+        sideShadow.addColorStop(0.62, "rgba(255, 220, 27, 0)");
+        sideShadow.addColorStop(1, `rgba(30, 18, 19, ${0.08 + depth * 0.12})`);
+        ctx.fillStyle = sideShadow;
+        ctx.fillRect(cx - w, cy - h, w * 2, h * 2);
+
+        const topShadow = ctx.createLinearGradient(cx, cy - h * 1.05, cx, cy + h * 0.16);
+        topShadow.addColorStop(0, `rgba(0, 0, 0, ${0.72 + depth * 0.2})`);
+        topShadow.addColorStop(0.32, `rgba(0, 0, 0, ${0.3 + depth * 0.2})`);
+        topShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = topShadow;
+        ctx.fillRect(cx - w, cy - h * 1.1, w * 2, h * 1.4);
+
+        const lowerGlow = ctx.createRadialGradient(cx, cy + h * 0.46, h * 0.05, cx, cy + h * 0.4, h * 0.75);
+        lowerGlow.addColorStop(0, `rgba(255, 137, 0, ${0.1 + depth * 0.12})`);
+        lowerGlow.addColorStop(1, "rgba(255, 137, 0, 0)");
+        ctx.fillStyle = lowerGlow;
+        ctx.fillRect(cx - w, cy, w * 2, h);
+        ctx.restore();
+      }
+
+      function drawEyeDisk(cx, cy, fieldRadius, mood, depth, t) {
+        const diskRadius = fieldRadius * (0.74 - depth * 0.1);
+        const diskX = cx + fieldRadius * (0.03 + depth * 0.03);
+        const diskY = cy + fieldRadius * (0.02 + depth * 0.04);
+
+        ctx.save();
+        const outerShadow = ctx.createRadialGradient(diskX, diskY, diskRadius * 0.7, diskX, diskY, diskRadius * 1.45);
+        outerShadow.addColorStop(0, "rgba(0,0,0,0)");
+        outerShadow.addColorStop(0.72, "rgba(0,0,0,0.1)");
+        outerShadow.addColorStop(1, `rgba(0,0,0,${0.55 + depth * 0.25})`);
+        ctx.fillStyle = outerShadow;
+        ctx.beginPath();
+        ctx.arc(diskX, diskY, diskRadius * 1.45, 0, Math.PI * 2);
+        ctx.fill();
+
+        const iris = ctx.createRadialGradient(
+          diskX - diskRadius * 0.18,
+          diskY - diskRadius * 0.22,
+          diskRadius * 0.08,
+          diskX,
+          diskY,
+          diskRadius
+        );
+        iris.addColorStop(0, "#fff65f");
+        iris.addColorStop(0.35, "#e7d500");
+        iris.addColorStop(0.58, "#f3a000");
+        iris.addColorStop(0.76, "#d85f18");
+        iris.addColorStop(0.92, "#68423d");
+        iris.addColorStop(1, "#1a1418");
+        ctx.fillStyle = iris;
+        ctx.beginPath();
+        ctx.arc(diskX, diskY, diskRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const sideShade = ctx.createLinearGradient(diskX - diskRadius, diskY, diskX + diskRadius, diskY);
+        sideShade.addColorStop(0, `rgba(20, 15, 24, ${0.52 + depth * 0.26})`);
+        sideShade.addColorStop(0.32, "rgba(88, 42, 31, 0.2)");
+        sideShade.addColorStop(0.7, "rgba(255, 230, 45, 0.02)");
+        sideShade.addColorStop(1, "rgba(66, 34, 29, 0.14)");
+        ctx.fillStyle = sideShade;
+        ctx.beginPath();
+        ctx.arc(diskX, diskY, diskRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(diskX, diskY);
+        for (let i = 0; i < 76; i += 1) {
+          const a = i * Math.PI * 2 / 76 + Math.sin(t * 0.0005 + i * 1.8) * 0.012;
+          const inner = diskRadius * (0.2 + (i % 5) * 0.018);
+          const outer = diskRadius * (0.84 + Math.sin(i * 4.3) * 0.06);
+          ctx.strokeStyle = i % 6 === 0 ? "rgba(255,244,80,0.18)" : "rgba(115,57,34,0.13)";
+          ctx.lineWidth = i % 6 === 0 ? 0.8 : 0.42;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+          ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.restore();
+        return { x: diskX, y: diskY, radius: diskRadius };
+      }
+
+      function drawIris(cx, cy, r, mood, pupilControl, t, side, disk) {
+        ctx.save();
+        const fieldRadius = disk.radius;
+        const glow = ctx.createRadialGradient(disk.x, disk.y, r * 0.2, disk.x, disk.y, fieldRadius * 1.1);
+        glow.addColorStop(0, `rgba(255, 226, 21, ${0.34 + mood * 0.12})`);
+        glow.addColorStop(0.46, `rgba(255, 176, 0, ${0.16 + mood * 0.08})`);
+        glow.addColorStop(1, "rgba(255, 119, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(disk.x, disk.y, fieldRadius * 1.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        const pupilR = r * (0.34 + pupilControl * 0.28);
+        ctx.fillStyle = "#141011";
+        ctx.beginPath();
+        ctx.arc(cx, cy, pupilR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.42)";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, pupilR + 1.4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawLids(cx, cy, w, openH, closeAmount, mood, outerLift, t) {
+        if (closeAmount <= 0.006) return;
+        ctx.save();
+        const mask = ctx.createLinearGradient(cx, cy - openH, cx, cy + openH);
+        mask.addColorStop(0, "#010103");
+        mask.addColorStop(0.5, "#08090b");
+        mask.addColorStop(1, "#000000");
+        ctx.fillStyle = mask;
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.94)";
+        ctx.lineWidth = 1.8;
+
+        const close = clamp(closeAmount, 0, 1);
+        const topEdge = cy - openH + openH * close;
+        const bottomEdge = cy + openH - openH * close;
+        const curve = openH * (0.32 + close * 0.14);
+        const leftLift = Math.max(0, -outerLift) * openH * 0.45;
+        const rightLift = Math.max(0, outerLift) * openH * 0.45;
+
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.68, cy - openH * 1.35);
+        ctx.lineTo(cx + w * 0.68, cy - openH * 1.35);
+        ctx.lineTo(cx + w * 0.68, topEdge - rightLift * 0.5);
+        ctx.bezierCurveTo(cx + w * 0.28, topEdge + curve - rightLift * 0.3, cx - w * 0.28, topEdge + curve - leftLift * 0.15, cx - w * 0.68, topEdge - leftLift * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.68, cy + openH * 1.35);
+        ctx.lineTo(cx + w * 0.68, cy + openH * 1.35);
+        ctx.lineTo(cx + w * 0.68, bottomEdge - rightLift * 0.08);
+        ctx.bezierCurveTo(cx + w * 0.28, bottomEdge - curve - rightLift * 0.08, cx - w * 0.28, bottomEdge - curve - leftLift * 0.08, cx - w * 0.68, bottomEdge - leftLift * 0.08);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawEye(cx, cy, lookX, lookY, blink, t, side, scale = 1) {
+        const mood = value("mood");
+        const lids = value("lids");
+        const outerLift = value("outer") * side;
+        const depth = value("depth");
+        const irisRadius = value("iris");
+        const pupil = value("pupil");
+        const userSize = value("size");
+        const openBoost = 1 - lids;
+        const eyeW = (78 + openBoost * 8) * scale * userSize;
+        const roundOpen = lids < 0.12 ? (1 - lids / 0.12) : 0;
+        const openH = (48 + openBoost * 11 + roundOpen * 24 + mood * 4 + starePulse * 6) * scale * userSize;
+        const eyeH = openH;
+        const tilt = side * (2 + mood * 1.8) * scale;
+        const closeAmount = clamp(blink + lids * 0.34, 0, 0.98);
+
+        drawRecess(cx, cy, eyeW, eyeH, tilt, lids, outerLift, depth, scale);
+
+        ctx.save();
+        eyePath(cx, cy, eyeW, eyeH, tilt, lids, outerLift);
+        ctx.clip();
+
+        ctx.fillStyle = "#020204";
+        ctx.fillRect(cx - eyeW * 1.15, cy - openH * 1.15, eyeW * 2.3, openH * 2.3);
+
+        const px = cx + lookX * (16 + mood * 2.8) * scale + microX * 3 * scale;
+        const py = cy + lookY * (9 + mood * 2.2) * scale + microY * 2 * scale;
+        const disk = drawEyeDisk(cx, cy, Math.max(eyeW, openH) * 0.86, mood, depth, t);
+        drawIris(px, py, (irisRadius + starePulse * 2) * scale * userSize, mood, pupil, t, side, disk);
+        drawInsetShadow(cx, cy, eyeW, eyeH, tilt, lids, outerLift, depth, scale);
+
+        const wet = ctx.createLinearGradient(cx, cy - openH * 0.78, cx, cy + openH * 0.18);
+        wet.addColorStop(0, "rgba(255,255,255,0.24)");
+        wet.addColorStop(0.25, "rgba(255,255,255,0.055)");
+        wet.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = wet;
+        ctx.fillRect(cx - eyeW, cy - openH, eyeW * 2, openH * 1.16);
+        ctx.restore();
+
+        ctx.lineWidth = 3.5 * scale;
+        ctx.strokeStyle = "#0b0a0d";
+        eyePath(cx, cy, eyeW, eyeH, tilt, lids, outerLift);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(123, 64, 255, 0.82)";
+        ctx.lineWidth = 2.2 * scale;
+        eyePath(cx, cy + 0.6 * scale, eyeW - 6 * scale, eyeH - 4 * scale, tilt, lids, outerLift);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(35, 219, 255, 0.78)";
+        ctx.lineWidth = 1.6 * scale;
+        eyePath(cx, cy - 1.2 * scale, eyeW + 6 * scale, eyeH + 5 * scale, tilt, lids, outerLift);
+        ctx.stroke();
+
+        drawLids(cx, cy, eyeW, openH, closeAmount, mood, outerLift, t);
+      }
+
+      function frame(t) {
+        const dt = Math.min(50, t - lastTime);
+        lastTime = t;
+        if (blinkPulse > 0) blinkPulse = Math.max(0, blinkPulse - dt / 430);
+        if (starePulse > 0) starePulse = Math.max(0, starePulse - dt / 1200);
+
+        const mood = value("mood");
+        if (t > nextTwitch) {
+          microX = (Math.random() - 0.5) * mood;
+          microY = (Math.random() - 0.5) * mood;
+          nextTwitch = t + 80 + Math.random() * (340 - mood * 240);
+        }
+
+        let x = value("x");
+        let y = value("y");
+        if (wander) {
+          x = clamp(Math.sin(t * 0.00105) * 0.88 + Math.sin(t * 0.0038) * 0.06, -1, 1);
+          y = clamp(Math.sin(t * 0.00077 + 1.8) * 0.48, -1, 1);
+          setValue("x", x.toFixed(2));
+          setValue("y", y.toFixed(2));
+        }
+
+        const manualBlink = value("blink");
+        const pulseBlink = blinkPulse > 0 ? Math.sin(blinkPulse * Math.PI) ** 0.34 : 0;
+        const autoBlink = wander ? Math.max(0, Math.sin(t * 0.0021 - 1.2)) ** 25 * 0.88 : 0;
+        const blink = clamp(Math.max(manualBlink, pulseBlink, autoBlink), 0, 0.98);
+
+        syncOutputs();
+        ctx.clearRect(0, 0, 240, 240);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(120, 120, 120, 0, Math.PI * 2);
+        ctx.clip();
+
+        drawSkinTexture(t, mood);
+        if (layout === "single") {
+          drawEye(120, 116, x, y, blink * 0.85, t, 1, 1.86);
+        } else {
+          const spacing = value("spacing");
+          drawEye(120 - spacing / 2, 117, x, y, blink, t, -1, 1);
+          drawEye(120 + spacing / 2, 117, x, y, blink * 0.92, t + 640, 1, 1);
+        }
+
+        const vignette = ctx.createRadialGradient(120, 118, 68, 120, 120, 121);
+        vignette.addColorStop(0, "rgba(0,0,0,0)");
+        vignette.addColorStop(0.78, "rgba(0,0,0,0.18)");
+        vignette.addColorStop(1, "rgba(0,0,0,0.84)");
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, 240, 240);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(120, 120, 119.4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        actualCtx.drawImage(canvas, 0, 0);
+
+        requestAnimationFrame(frame);
+      }
+
+      function pointToLook(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+        setValue("x", clamp(x, -1, 1).toFixed(2));
+        setValue("y", clamp(y, -1, 1).toFixed(2));
+        wander = false;
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        canvas.setPointerCapture(event.pointerId);
+        pointToLook(event);
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        if (event.buttons === 1) pointToLook(event);
+      });
+
+      document.querySelector('[data-action="wander"]').addEventListener("click", () => {
+        wander = !wander;
+      });
+      document.querySelector('[data-action="blink"]').addEventListener("click", () => {
+        blinkPulse = 1;
+      });
+      document.querySelector('[data-action="twin"]').addEventListener("click", () => {
+        layout = "twin";
+        setValue("iris", "24");
+        setValue("pupil", "0.54");
+        setValue("size", "0.82");
+        setValue("spacing", "96");
+      });
+      document.querySelector('[data-action="single"]').addEventListener("click", () => {
+        layout = "single";
+        setValue("iris", "25");
+        setValue("pupil", "0.52");
+        setValue("size", "0.78");
+      });
+      document.querySelector('[data-action="photo"]').addEventListener("click", () => {
+        wander = true;
+        layout = "twin";
+        setValue("mood", "0.82");
+        setValue("depth", "0.86");
+        setValue("lids", "0.02");
+        setValue("outer", "0.08");
+        setValue("pupil", "0.48");
+        setValue("iris", "25");
+        setValue("size", "0.78");
+        setValue("spacing", "100");
+      });
+      document.querySelector('[data-action="round"]').addEventListener("click", () => {
+        wander = true;
+        setValue("lids", "0");
+        setValue("outer", "0.08");
+        setValue("blink", "0");
+        setValue("mood", "0.62");
+        setValue("depth", "0.82");
+        setValue("iris", layout === "single" ? "26" : "25");
+        setValue("size", layout === "single" ? "0.82" : "0.78");
+      });
+      document.querySelector('[data-action="soft"]').addEventListener("click", () => {
+        wander = true;
+        setValue("mood", "0.38");
+        setValue("depth", "0.46");
+        setValue("lids", "0.22");
+        setValue("outer", "0.04");
+        setValue("pupil", "0.38");
+        setValue("iris", layout === "single" ? "24" : "22");
+        setValue("size", layout === "single" ? "0.8" : "0.74");
+      });
+      document.querySelector('[data-action="center"]').addEventListener("click", () => {
+        wander = false;
+        starePulse = 0;
+        setValue("x", "0");
+        setValue("y", "0");
+        setValue("blink", "0.02");
+      });
+
+      for (const input of Object.values(controls)) {
+        input.addEventListener("input", () => {
+          if (input === controls.x || input === controls.y) wander = false;
+        });
+      }
+
+      syncOutputs();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
