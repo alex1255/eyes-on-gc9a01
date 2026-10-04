@@ -93,3 +93,7 @@ stehen auch in [`raspberry/README.md`](raspberry/README.md).
 Die Augen laufen aktuell auf dem Raspberry Pi. Eine Arduino-/ESP32-C6-Version
 ist noch nicht erstellt oder getestet. Simulator und Pi-Animation dienen als
 Vorlage für eine spätere Portierung.
+
+## Ausblick
+
+Als nächstes ist ein passendes, 3D-druckbares Gehäuse für Display und Elektronik geplant. Dazu soll ein Näherungssensor kommen, der erkennt, wenn sich jemand dem kleinen Schreibtisch-Wesen nähert. Über Home Assistant könnten solche Ereignisse dann eine passende Reaktion der Augen auslösen. Gehäuse, Sensor und Home-Assistant-Anbindung sind noch in Planung und nicht Bestandteil der aktuellen Version.
