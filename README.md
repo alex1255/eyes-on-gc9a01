@@ -96,4 +96,13 @@ Vorlage für eine spätere Portierung.
 
 ## Ausblick
 
-Als nächstes ist ein passendes, 3D-druckbares Gehäuse für Display und Elektronik geplant. Dazu soll ein Näherungssensor kommen, der erkennt, wenn sich jemand dem kleinen Schreibtisch-Wesen nähert. Über Home Assistant könnten solche Ereignisse dann eine passende Reaktion der Augen auslösen. Gehäuse, Sensor und Home-Assistant-Anbindung sind noch in Planung und nicht Bestandteil der aktuellen Version.
+Als nächstes ist ein passendes, 3D-druckbares Gehäuse für Display und Elektronik
+geplant. Dazu soll ein Näherungssensor kommen, der erkennt, wenn sich jemand dem
+kleinen Schreibtisch-Wesen nähert. Über Home Assistant könnten solche Ereignisse
+dann eine passende Reaktion der Augen auslösen. Gehäuse, Sensor und
+Home-Assistant-Anbindung sind noch in Planung und nicht Bestandteil der
+aktuellen Version.
+
+![Konzeptentwurf des Gehäuses mit rückseitigem Wartungszugang](docs/enclosure-concept.jpg)
+
+*Konzeptdarstellung zur Form und zum Aufbau. Nicht maßgenau und keine druckfertige CAD-Datei.*
